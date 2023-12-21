@@ -1,3 +1,7 @@
+> [!NOTE]
+> Currently, this is just a fork of gltfjsx. No working Vue version yet.
+
+
 https://user-images.githubusercontent.com/2223602/126318148-99da7ed6-a578-48dd-bdd2-21056dbad003.mp4
 
 <br />
