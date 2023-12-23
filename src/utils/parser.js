@@ -123,10 +123,19 @@ function parse(gltf, { fileName = 'model', ...options } = {}) {
   function getType(obj) {
     let type = obj.type.charAt(0).toLowerCase() + obj.type.slice(1)
     // Turn object3d's into groups, it should be faster according to the threejs docs
-    if (type === 'object3D') type = 'group'
+    if (type === 'object3D') type = 'TresGroup'
     if (type === 'perspectiveCamera') type = 'PerspectiveCamera'
     if (type === 'orthographicCamera') type = 'OrthographicCamera'
-    return type
+
+    // Convert types to TresJS
+    if (type === 'primitive') return 'primitive'
+    if (type === 'bone') return 'bone'
+
+    return `Tres${capitalizeFirstLetter(type)}`
+  }
+
+  function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
   }
 
   function handleProps(obj) {
@@ -151,42 +160,42 @@ function parse(gltf, { fileName = 'model', ...options } = {}) {
 
       // Write out geometry first
       if (obj.geometry && !obj.isInstancedMesh) {
-        result += `geometry={${node}.geometry} `
+        result += `:geometry="${node}.geometry" `
       }
 
       // Write out materials
       if (obj.material && !obj.isInstancedMesh) {
-        if (obj.material.name) result += `material={materials${sanitizeName(obj.material.name)}} `
-        else result += `material={${node}.material} `
+        if (obj.material.name) result += `:material="materials${sanitizeName(obj.material.name)}" `
+        else result += `:material="${node}.material" `
       }
 
-      if (obj.instanceMatrix) result += `instanceMatrix={${node}.instanceMatrix} `
-      if (obj.instanceColor) result += `instanceColor={${node}.instanceColor} `
-      if (obj.skeleton) result += `skeleton={${node}.skeleton} `
-      if (obj.visible === false) result += `visible={false} `
+      if (obj.instanceMatrix) result += `:instanceMatrix="${node}.instanceMatrix" `
+      if (obj.instanceColor) result += `:instanceColor="${node}.instanceColor" `
+      if (obj.skeleton) result += `:skeleton="${node}.skeleton" `
+      if (obj.visible === false) result += `visible="false" `
       if (obj.castShadow === true) result += `castShadow `
       if (obj.receiveShadow === true) result += `receiveShadow `
-      if (obj.morphTargetDictionary) result += `morphTargetDictionary={${node}.morphTargetDictionary} `
-      if (obj.morphTargetInfluences) result += `morphTargetInfluences={${node}.morphTargetInfluences} `
-      if (obj.intensity && rNbr(obj.intensity)) result += `intensity={${rNbr(obj.intensity)}} `
+      if (obj.morphTargetDictionary) result += `:morphTargetDictionary="${node}.morphTargetDictionary" `
+      if (obj.morphTargetInfluences) result += `:morphTargetInfluences="${node}.morphTargetInfluences" `
+      if (obj.intensity && rNbr(obj.intensity)) result += `:intensity="${rNbr(obj.intensity)}" `
       //if (obj.power && obj.power !== 4 * Math.PI) result += `power={${rNbr(obj.power)}} `
-      if (obj.angle && obj.angle !== Math.PI / 3) result += `angle={${rDeg(obj.angle)}} `
-      if (obj.penumbra && rNbr(obj.penumbra) !== 0) result += `penumbra={${rNbr(obj.penumbra)}} `
-      if (obj.decay && rNbr(obj.decay) !== 1) result += `decay={${rNbr(obj.decay)}} `
-      if (obj.distance && rNbr(obj.distance) !== 0) result += `distance={${rNbr(obj.distance)}} `
+      if (obj.angle && obj.angle !== Math.PI / 3) result += `:angle="${rDeg(obj.angle)}" `
+      if (obj.penumbra && rNbr(obj.penumbra) !== 0) result += `:penumbra="${rNbr(obj.penumbra)}" `
+      if (obj.decay && rNbr(obj.decay) !== 1) result += `:decay="${rNbr(obj.decay)}" `
+      if (obj.distance && rNbr(obj.distance) !== 0) result += `:distance="${rNbr(obj.distance)}" `
       if (obj.up && obj.up.isVector3 && !obj.up.equals(new THREE.Vector3(0, 1, 0)))
-        result += `up={[${rNbr(obj.up.x)}, ${rNbr(obj.up.y)}, ${rNbr(obj.up.z)},]} `
+        result += `:up="[${rNbr(obj.up.x)}, ${rNbr(obj.up.y)}, ${rNbr(obj.up.z)},]" `
     }
 
     if (obj.color && obj.color.getHexString() !== 'ffffff') result += `color="#${obj.color.getHexString()}" `
     if (obj.position && obj.position.isVector3 && rNbr(obj.position.length()))
-      result += `position={[${rNbr(obj.position.x)}, ${rNbr(obj.position.y)}, ${rNbr(obj.position.z)},]} `
+      result += `:position="[${rNbr(obj.position.x)}, ${rNbr(obj.position.y)}, ${rNbr(obj.position.z)},]" `
     if (
       obj.rotation &&
       obj.rotation.isEuler &&
       rNbr(new THREE.Vector3(obj.rotation.x, obj.rotation.y, obj.rotation.z).length())
     )
-      result += `rotation={[${rDeg(obj.rotation.x)}, ${rDeg(obj.rotation.y)}, ${rDeg(obj.rotation.z)},]} `
+      result += `:rotation="[${rDeg(obj.rotation.x)}, ${rDeg(obj.rotation.y)}, ${rDeg(obj.rotation.z)},]" `
     if (
       obj.scale &&
       obj.scale.isVector3 &&
@@ -196,9 +205,9 @@ function parse(gltf, { fileName = 'model', ...options } = {}) {
       const rY = rNbr(obj.scale.y)
       const rZ = rNbr(obj.scale.z)
       if (rX === rY && rX === rZ) {
-        result += `scale={${rX}} `
+        result += `scale="${rX}" `
       } else {
-        result += `scale={[${rX}, ${rY}, ${rZ},]} `
+        result += `scale="[${rX}, ${rY}, ${rZ},]" `
       }
     }
     if (options.meta && obj.userData && Object.keys(obj.userData).length)
@@ -337,7 +346,7 @@ function parse(gltf, { fileName = 'model', ...options } = {}) {
 
     // Bail out on lights and bones
     if (type === 'bone') {
-      return `<primitive object={${node}} />`
+      return `<primitive :object="${node}" />`
     }
 
     // Collect children
@@ -377,7 +386,7 @@ function parse(gltf, { fileName = 'model', ...options } = {}) {
 
   function printAnimations(animations) {
     return animations.length
-      ? `\nconst { actions } = useAnimations${options.types ? '<GLTFActions>' : ''}(animations, group)`
+      ? `\nconst { actions } = useAnimations${options.types ? '<GLTFActions>' : ''}(animations, model);\nconst currentAction = ref(Object.values(actions)?.at(0));\ncurrentAction.value.play();`
       : ''
   }
 
@@ -437,20 +446,25 @@ function parse(gltf, { fileName = 'model', ...options } = {}) {
     console.log('Error while parsing glTF', e)
   }
   const header = `/*
-${options.header ? options.header : 'Auto-generated by: https://github.com/pmndrs/gltfjsx'} ${
+${options.header ? options.header : 'Auto-generated by: https://github.com/OmnomnomTee/gltfvue'} ${
     options.size ? `\nFiles: ${options.size}` : ''
   }
 ${parseExtras(gltf.parser.json.asset && gltf.parser.json.asset.extras)}*/`
-  const result = `${options.types ? `\nimport * as THREE from 'three'` : ''}
-        import React, { useRef ${hasInstances ? ', useMemo, useContext, createContext' : ''} } from 'react'
-        import { useGLTF, ${hasInstances ? 'Merged, ' : ''} ${
-    scene.includes('PerspectiveCamera') ? 'PerspectiveCamera,' : ''
-  }
+        const result = `${options.types ? `\nimport * as THREE from 'three'` : ''}
+        <script setup ${options.types ? 'lang="ts" ' : ''}>
+        
+        ${hasAnimations ? 'import { ref, shallowRef } from \'vue\';' : ''}        
+
+        import { useGLTF, ${hasInstances ? ', Merged, ' : ''}  
+
+        ${scene.includes('PerspectiveCamera') ? 'PerspectiveCamera,' : ''}
         ${scene.includes('OrthographicCamera') ? 'OrthographicCamera,' : ''}
-        ${hasAnimations ? 'useAnimations' : ''} } from '@react-three/drei'
+        ${hasAnimations ? 'useAnimations' : ''} } from '@tresjs/cientos'
+        
+
         ${options.types ? 'import { GLTF } from "three-stdlib"' : ''}
         ${options.types ? printTypes(objects, animations) : ''}
-
+        
         ${
           hasInstances
             ? `
@@ -473,25 +487,30 @@ ${parseExtras(gltf.parser.json.asset && gltf.parser.json.asset.extras)}*/`
         `
             : ''
         }
-
-        export function Model(props${options.types ? ": JSX.IntrinsicElements['group']" : ''}) {
+        
           ${hasInstances ? 'const instances = useContext(context);' : ''} ${
-    hasAnimations ? `const group = ${options.types ? 'useRef<THREE.Group>()' : 'useRef()'};` : ''
-  } ${
-    !options.instanceall
-      ? `const { nodes, materials${hasAnimations ? ', animations' : ''} } = useGLTF('${url}'${
-          options.draco ? `, ${JSON.stringify(options.draco)}` : ''
-        })${options.types ? ' as GLTFResult' : ''}`
-      : ''
-  } ${printAnimations(animations)}
-          return (
-            <group ${hasAnimations ? `ref={group}` : ''} {...props} dispose={null}>
-        ${scene}
-            </group>
-          )
-        }
+          hasAnimations ? `${options.types ? 'const group: ShallowRef<TresInstance | null>' : 'const group'} = shallowRef(null);` : ''
+        } ${
+          !options.instanceall
+            ? `const { nodes, materials${hasAnimations ? ', animations, scene: model' : ''} } = await useGLTF('${url}'${
+              options.draco ? `, ${JSON.stringify(options.draco)}` : ''
+            })${options.types ? ' as GLTFResult' : ''}`
+            : ''
+        } ${printAnimations(animations)}
+        
+        </script>
+      
 
-useGLTF.preload('${url}')`
+
+            <template>
+            <TresGroup ${hasAnimations ? `ref="group"` : ''}>
+        ${scene}
+            </TresGroup>
+            </template>
+         
+        
+
+// useGLTF.preload('${url}')`
 
   console.log(header)
   const output = header + '\n' + result
@@ -500,7 +519,7 @@ useGLTF.preload('${url}')`
     printWidth: options.printwidth || 1000,
     singleQuote: true,
     jsxBracketSameLine: true,
-    parser: 'babel-ts',
+    parser: 'vue',
     plugins: [babelParser],
   })
 }
