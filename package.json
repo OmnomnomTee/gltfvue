@@ -1,7 +1,7 @@
 {
-  "name": "gltfjsx",
-  "version": "6.5.2",
-  "description": "GLTF to JSX converter",
+  "name": "gltfvue",
+  "version": "0.1.0",
+  "description": "GLTF to Vue/TresJS converter",
   "scripts": {
     "build": "rollup -c",
     "test": "node src/test"
