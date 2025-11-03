@@ -2,7 +2,8 @@
 'use strict'
 import meow from 'meow'
 import { fileURLToPath } from 'url'
-import { dirname } from 'path'
+import { dirname, join } from 'path'
+import { mkdirSync, copyFileSync, existsSync } from 'fs'
 import gltfjsx from './src/gltfjsx.js'
 import { readPackageUpSync } from 'read-pkg-up'
 
@@ -86,12 +87,40 @@ Command: npx gltfvue@${packageJson.version} ${process.argv.slice(2).join(' ')}`,
   const file = cli.input[0]
   let nameExt = file.match(/[-_\w\d\s]+[.][\w]+$/i)[0]
   let name = nameExt.split('.').slice(0, -1).join('.')
-  const output = config.output ?? name.charAt(0).toUpperCase() + name.slice(1) + (config.types ? '.vue' : '.vue')
+
+  // Create output directory if it doesn't exist
+  const outputDir = join(__dirname, 'output')
+  mkdirSync(outputDir, { recursive: true })
+
+  const output = config.output ?? join(outputDir, name.charAt(0).toUpperCase() + name.slice(1) + (config.types ? '.vue' : '.vue'))
   const showLog = (log) => {
     console.info('log:', log)
   }
   try {
     const response = await gltfjsx(file, output, { ...config, showLog, timeout: 0, delay: 1 })
+
+    // Create a copy in the demo folder with a fixed name for showcasing
+    const demoDir = join(__dirname, 'demo', 'src', 'components')
+    mkdirSync(demoDir, { recursive: true })
+    const demoOutput = join(demoDir, 'Model.vue')
+    await gltfjsx(file, demoOutput, { ...config, showLog, timeout: 0, delay: 1 })
+
+    // Copy the transformed GLB file to demo/public if it exists
+    if (config.transform) {
+      const transformedGlbName = name + '-transformed.glb'
+      const transformedGlbPath = join(outputDir, transformedGlbName)
+      if (existsSync(transformedGlbPath)) {
+        const demoPublicDir = join(__dirname, 'demo', 'public')
+        mkdirSync(demoPublicDir, { recursive: true })
+        const demoGlbPath = join(demoPublicDir, transformedGlbName)
+        copyFileSync(transformedGlbPath, demoGlbPath)
+        console.log(`\nCreated files:\n  - ${output}\n  - ${demoOutput}\n  - ${demoGlbPath}`)
+      } else {
+        console.log(`\nCreated files:\n  - ${output}\n  - ${demoOutput}`)
+      }
+    } else {
+      console.log(`\nCreated files:\n  - ${output}\n  - ${demoOutput}`)
+    }
   } catch (e) {
     console.error(e)
   }

@@ -1,0 +1,25 @@
+/*
+Test 
+Author: GameAnax (https://sketchfab.com/gameanax)
+License: SKETCHFAB Editorial (https://sketchfab.com/licenses)
+Source: https://sketchfab.com/3d-models/carbon-fiber-drone-unmanned-aerial-vehicle-ceb4b8ba11b349b18c039713bccfe9a0
+Title: Carbon Fiber Drone - Unmanned Aerial Vehicle
+*/
+<script setup lang="ts">
+import { useGLTF } from '@tresjs/cientos'
+
+const { nodes, materials } = await useGLTF('/scene.gltf')
+
+</script>
+
+<template>
+  <TresGroup>
+<TresGroup :rotation="[Math.PI / 2, 0, 0]" >
+<TresMesh :geometry="nodes['fan_02_-_Default_0'].geometry" :material="materials['02_-_Default']" />
+<TresMesh :geometry="nodes['fan001_02_-_Default_0'].geometry" :material="materials['02_-_Default']" />
+<TresMesh :geometry="nodes['fan002_02_-_Default_0'].geometry" :material="materials['02_-_Default']" />
+<TresMesh :geometry="nodes['fan003_02_-_Default_0'].geometry" :material="materials['02_-_Default']" />
+<TresMesh :geometry="nodes['Low_02_-_Default_0'].geometry" :material="materials['02_-_Default']" />
+</TresGroup>
+  </TresGroup>
+</template>

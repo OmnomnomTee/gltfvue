@@ -4,7 +4,10 @@
   "description": "GLTF to Vue/TresJS converter",
   "scripts": {
     "build": "rollup -c",
-    "test": "node src/test"
+    "test": "node --test src/test.spec.js",
+    "demo:install": "cd demo && npm install",
+    "demo:dev": "cd demo && npm run dev",
+    "demo:build": "cd demo && npm run build"
   },
   "type": "module",
   "keywords": [

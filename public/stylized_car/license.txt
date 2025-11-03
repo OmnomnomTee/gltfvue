@@ -1,0 +1,8 @@
+Model Information:
+* title:	Stylized Car
+* source:	https://sketchfab.com/3d-models/stylized-car-0323feeb81e84e67a13acc964b6c609b
+* author:	Split Studios (https://sketchfab.com/splitcg)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works
